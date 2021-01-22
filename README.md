@@ -7,4 +7,4 @@
 # reddit
 A command that takes one argument, subreddit, to grab a random post from.
 >>>$reddit memes
->>>returns a random post from r/memes
+>>returns a random post from r/memes
