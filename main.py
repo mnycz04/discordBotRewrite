@@ -51,7 +51,12 @@ async def on_ready():
     return
 
 
+async def _purge(ctx, limit):
+    await ctx.message.delete()
+    await ctx.channel.purge(limit=limit, bulk=True)
+
 # Server issued commands:
+
 
 @client.command(aliases=['red', 'r'])
 async def reddit(ctx, *, subreddit=None):
@@ -91,6 +96,29 @@ id {ctx.guild.id} requested a random post from r/{subreddit}.""")
             await ctx.send(embed=embed)
             if video:
                 await ctx.send(post.url)
+
+
+@client.command(aliases=['delete'])
+async def purge(ctx, limit="""10"""):
+    logger.info(f"{ctx.author.name} has requested a purge of {ctx.channel.name} in guild {ctx.guild.name}, \
+id {ctx.guild.id}, for {limit} messages.")
+    try:
+        limit = int(limit)
+        client.loop.create_task(_purge(ctx, limit))
+        logger.info(f"{limit} messages purged.")
+        await ctx.send(f"Purged {limit} messages!")
+    except discord.Forbidden:
+        await ctx.send("I do not have the permission to do that!", delete_after=10)
+        logger.info("Permission denied")
+    except discord.HTTPException:
+        await ctx.send("Error in purging messages.", delete_after=10)
+        logger.warning("HTTP error in purging messages.")
+    except ValueError:
+        await ctx.send("Invalid argument. Please use format $purge [integer].")
+        logger.info("Invalid argument.")
+    except Exception:
+        await ctx.send("Unhandled exception in purging messages", delete_after=10)
+        logger.exception("Unhandled exception in function purge():")
 
 
 # Runs the bot with private token from token.TOKEN
