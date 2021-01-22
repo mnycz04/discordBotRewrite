@@ -10,6 +10,7 @@ import discord
 from discord.ext import commands
 
 import mytoken
+from reddit import get_reddit_post
 
 __version__ = '0.1'
 
@@ -47,10 +48,49 @@ async def on_ready():
     :returns: None
     """
     logger.info("Bot connected, and ready.")
-    return None
+    return
 
 
 # Server issued commands:
+
+@client.command(aliases=['red', 'r'])
+async def reddit(ctx, *, subreddit=None):
+    await ctx.message.delete()
+    subreddit = ''.join(subreddit).lower().replace(' ', '')
+    logger.info(f"""{ctx.author.name} in guild {ctx.guild.name}, \
+id {ctx.guild.id} requested a random post from r/{subreddit}.""")
+    try:
+        post = await client.loop.create_task(get_reddit_post(subreddit))
+        e = False
+        return
+    except LookupError:
+        logger.info(f"{subreddit} was an invalid rub name.")
+        await ctx.send(f"{subreddit} was an invalid sub-name", delete_after=5)
+        e = True
+        return
+    except ConnectionRefusedError:
+        logger.info(f"{subreddit} does not support .random() function")
+        await ctx.send(f"{subreddit} doesn't allow bots to retrieve posts.", delete_after=5)
+        e = True
+        return
+    except Exception:
+        logger.exception("Unhandled exception in function get_reddit_post():")
+        await ctx.send("There was an unhandled exception in retrieving the post.", delete_after=5)
+        e = True
+        return
+    finally:
+        if e is False:
+            video = False
+            embed = discord.Embed(title=post.title, url=post.shortlink)
+            if '.jpg' in post.url:
+                embed.set_image(url=post.url)
+            elif ('v.redd.it' in post.url) or ('youtu' in post.url):
+                video = True
+            embed.set_author(name=post.author.name)
+            embed.set_footer(text=f'r/{subreddit}')
+            await ctx.send(embed=embed)
+            if video:
+                await ctx.send(post.url)
 
 
 # Runs the bot with private token from token.TOKEN
