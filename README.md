@@ -6,20 +6,16 @@
 
 ## reddit
 A command that takes one argument, subreddit, to grab a random post from.
->$reddit memes
- returns a random post from r/memes
- alaises = r, red
+>$reddit memes  # returns a random post from r/memes, alaises = r, red
  
 ## purge
 A command that takes one optional argument, limit, which deletes a large amount of messages = limit
 default of limit is 10
->$purge 1000 # deletes 1000 messages
->$purge # deletes 10 messages, aliases = delete
+>$purge 1000  # deletes 1000 messages, aliases = delete
 
 ## schedule
 A command that returns an image of our school schedule
->$schedule
-aliases= shed
+>$schedule  # aliases= shed
 
 ## ping
 A command that takes two optional arguments, IP, and port.
