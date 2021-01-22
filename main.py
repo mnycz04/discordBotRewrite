@@ -12,6 +12,7 @@ from discord.ext import commands
 import mytoken
 from reddit import get_reddit_post
 from schedule import check_time
+from serverPing import ping as tcp_ping
 
 __version__ = '0.1'
 
@@ -23,7 +24,6 @@ intents.members = True
 
 # Creates the bot with configured intents and assigns prefix
 client = commands.Bot(command_prefix='$', intents=intents)
-
 
 # Creates Logger to log events, exceptions, and errors
 logFormatter = logging.Formatter("[%(name)s - %(levelname)s - %(asctime)s]: %(message)s",
@@ -56,8 +56,8 @@ async def _purge(ctx, limit):
     await ctx.message.delete()
     await ctx.channel.purge(limit=limit, bulk=True)
 
-# Server issued commands:
 
+# Server issued commands:
 
 @client.command(aliases=['red', 'r'])
 async def reddit(ctx, *, subreddit=None):
@@ -134,6 +134,24 @@ async def schedule(ctx):
     embed.set_footer(text=f'{check_time().next_period}')
 
     await ctx.send(embed=embed, delete_after=15)
+
+
+@client.command()
+async def ping(ctx, ip="CalcCraft.us.to", port="25565"):
+    await ctx.message.delete()
+
+    try:
+        port = int(port)
+    except ValueError:
+        logger.info("Invalid port argument")
+        await ctx.send("Invalid port.", delete_after=5)
+        return
+
+    logger.info(f"{ctx.author.name} in guild {ctx.guild.name}, id {ctx.guild.id} pinged {ip}:{port}.")
+    if await tcp_ping(ip, port):
+        await ctx.send("Connection successful!", delete_after=5)
+    else:
+        await ctx.send("Connection failed!", delete_after=5)
 
 
 # Runs the bot with private token from token.TOKEN
