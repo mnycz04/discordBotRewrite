@@ -11,6 +11,7 @@ from discord.ext import commands
 
 import mytoken
 from reddit import get_reddit_post
+from schedule import check_time
 
 __version__ = '0.1'
 
@@ -119,6 +120,20 @@ id {ctx.guild.id}, for {limit} messages.")
     except Exception:
         await ctx.send("Unhandled exception in purging messages", delete_after=10)
         logger.exception("Unhandled exception in function purge():")
+
+
+@client.command(aliases=['shed'])
+async def schedule(ctx):
+    """Sends a picture of the school schedule"""
+    await ctx.message.delete()
+    logger.info(f"{ctx.author.name} has requested the school schedule in guild {ctx.guild.name},\
+ id {ctx.guild.id}.")
+
+    embed = discord.Embed(title=f'{check_time().current_period}')
+    embed.set_image(url="https://i.imgur.com/IdLNJW0.png")
+    embed.set_footer(text=f'{check_time().next_period}')
+
+    await ctx.send(embed=embed, delete_after=15)
 
 
 # Runs the bot with private token from token.TOKEN
