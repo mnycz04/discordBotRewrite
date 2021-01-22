@@ -13,7 +13,7 @@ A command that takes one argument, subreddit, to grab a random post from.
 ## purge
 A command that takes one optional argument, limit, which deletes a large amount of messages = limit
 default of limit is 10
->$purge 1000 # deletes 1000 messages\n
+>$purge 1000 # deletes 1000 messages
 >$purge # deletes 10 messages, aliases = delete
 
 ## schedule
