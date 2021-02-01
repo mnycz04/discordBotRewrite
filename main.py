@@ -59,6 +59,50 @@ async def _purge(ctx, limit):
 
 # Server issued commands:
 
+@client.command()
+async def h(ctx, command='none'):
+    await ctx.message.delete()
+    command = command.lower()
+    if command == "reddit":
+        embed = discord.Embed(title="Command: Reddit")
+        embed.description = """Allow user to retrieve a random new post from a subreddit
+                            
+                            "$reddit [subreddit]"
+                            aliases: r, red"""
+    elif command == 'purge':
+        embed = discord.Embed(title='Command: Purge')
+        embed.description = """Bulk deletes a specified number of messages in a text channel
+                            
+                            "$purge [number to delete]"
+                            aliases: delete
+                            Requires the manage messages role"""
+    elif command == 'ping':
+        embed = discord.Embed(title='Command: Ping')
+        embed.description = """Pings a specified IP via TCP on a given port.
+        
+                            "$ping [IP] [port]"
+                            """
+    elif command == 'schedule':
+        embed = discord.Embed(title='Command: Schedule')
+        embed.description = """Returns a school schedule and tells you what period your in
+                            
+                            "$schedule"
+                            aliases: shed"""
+    else:
+        embed = discord.Embed(title='Help')
+        embed.description = """List of Commands:
+                            
+                            reddit
+                            purge
+                            ping
+                            schedule
+                            
+                            Use "$help [command name] for more detailed descriptions"
+                            """
+
+    await ctx.send(embed=embed)
+
+
 @client.command(aliases=['red', 'r'])
 async def reddit(ctx, *, subreddit=None):
     await ctx.message.delete()
