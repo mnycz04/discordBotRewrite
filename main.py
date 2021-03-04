@@ -54,7 +54,7 @@ async def on_ready():
 
 async def _purge(ctx, limit):
     await ctx.message.delete()
-    await ctx.channel.purge(limit=limit, bulk=True)
+    await ctx.channel.purge(limit=limit + 1, bulk=True)
 
 
 # Server issued commands:
@@ -145,6 +145,8 @@ id {ctx.guild.id} requested a random post from r/{subreddit}.""")
 
 @client.command(aliases=['delete'])
 async def purge(ctx, limit="""10"""):
+    if ctx.message.author.name != 'mnycz04':
+        return
     logger.info(f"{ctx.author.name} has requested a purge of {ctx.channel.name} in guild {ctx.guild.name}, \
 id {ctx.guild.id}, for {limit} messages.")
     try:
