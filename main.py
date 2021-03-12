@@ -5,6 +5,7 @@ For a list of commands, and how to use them, see the README
 
 """
 import logging
+import random
 
 import discord
 from discord.ext import commands
@@ -198,6 +199,13 @@ async def ping(ctx, ip="CalcCraft.us.to", port="25565"):
         await ctx.send("Connection successful!", delete_after=5)
     else:
         await ctx.send("Connection failed!", delete_after=5)
+
+
+@client.command()
+async def roll(ctx, *, message=None):
+    await ctx.message.delete()
+    message = ''.join(message)
+    await ctx.send(f"{message} {round(random.random() * 100, 2)}%", delete_after=10)
 
 
 # Runs the bot with private token from token.TOKEN
