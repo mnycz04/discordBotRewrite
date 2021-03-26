@@ -9,6 +9,7 @@ import random
 
 import discord
 from discord.ext import commands
+import random_word
 
 import mytoken
 from reddit import get_reddit_post
@@ -206,6 +207,23 @@ async def roll(ctx, *, message=None):
     await ctx.message.delete()
     message = ''.join(message)
     await ctx.send(f"{message} {round(random.random() * 100, 2)}%", delete_after=10)
+
+
+@client.command()
+async def sentence(ctx, length):
+    await ctx.message.delete()
+    try:
+        length = int(length)
+    except ValueError:
+        await ctx.message.send("Invalid 'length parameter'!", delete_after=5)
+    logger.info(f"{ctx.author.name} in guild {ctx.guild.name}, id {ctx.guild.id} used the 'sentence command'")
+    randomwords = random_word.RandomWords()
+
+    random_sentence = ""
+    for i in range(length):
+        pos = random.choice(["noun", "verb", "adjective", "adverb"])
+        random_sentence += f'{randomwords.get_random_word(includePartOfSpeech=pos)} '
+    await ctx.send(f"{random_sentence.strip()}!", delete_after=15)
 
 
 # Runs the bot with private token from token.TOKEN
