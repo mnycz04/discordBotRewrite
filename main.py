@@ -220,7 +220,7 @@ async def sentence(ctx, length):
         await ctx.send("Invalid 'length parameter'!", delete_after=5)
         return
     except OverflowError:
-        await ctx.send("Length is too large, keep it under 20.")
+        await ctx.send("Length is too large, keep it under 20.", delete_after=5)
         return
     logger.info(f"{ctx.author.name} in guild {ctx.guild.name}, id {ctx.guild.id} used the 'sentence command'")
     randomwords = random_word.RandomWords()
