@@ -59,6 +59,15 @@ async def _purge(ctx, limit):
     await ctx.channel.purge(limit=limit + 1, bulk=True)
 
 
+async def check_for_officer(ctx):
+    _officer_list = ["SeatedEquation", "mnycz04"]
+    for channel in ctx.guild.voice_channels:
+        for member in channel.members:
+            if member.name in _officer_list and channel.name == "Officer Channel":
+                return True
+    return False
+
+
 # Server issued commands:
 
 @client.command()
@@ -230,6 +239,27 @@ async def sentence(ctx, length):
         pos = random.choice(["noun", "verb", "adjective", "adverb"])
         random_sentence += f'{randomwords.get_random_word(includePartOfSpeech=pos)} '
     await ctx.send(f"{random_sentence.strip()}!", delete_after=15)
+
+
+@client.command()
+async def officer(ctx):
+    await ctx.message.delete()
+    logger.info(f"{ctx.message.author} used the officer command in guild {ctx.guild.name}, id {ctx.guild.id}.")
+    _whitelisted_members = ["cfallat7", "Breezus", "2fast4you"]
+    if ctx.author.name not in _whitelisted_members:
+        await ctx.send("**You are not whitelisted to use that command!**", delete_after=5.0)
+        logger.info("They were not whitelisted to use that command.")
+        return
+    for channel in ctx.guild.voice_channels:
+        if channel.name == "Officer Channel":
+            _officer_channel = channel
+    if not await check_for_officer(ctx):
+        await ctx.message.author.move_to(_officer_channel)
+        logger.info(f"{ctx.author.name} was moved to {_officer_channel.name}.")
+        return
+    else:
+        await ctx.send("**Hey idiot, there is an officer in that channel, ask them, not me.**", delete_after=5.0)
+        return
 
 
 # Runs the bot with private token from token.TOKEN
