@@ -10,13 +10,17 @@ import random
 import discord
 from discord.ext import commands
 import random_word
+import configparser
 
 import mytoken
 from reddit import get_reddit_post
 from schedule import check_time
 from serverPing import ping as tcp_ping
 
-__version__ = '0.1'
+__version__ = '1.0'
+
+config = configparser.ConfigParser()
+config.read('config.ini')
 
 # Sets up intents of bot
 # Bot requires the .member and .messages intent
@@ -60,12 +64,22 @@ async def _purge(ctx, limit):
 
 
 async def check_for_officer(ctx):
+    """
+    Checks for an officer in Officer Channel
+    :return: If there is an officer, returns True, else returns False
+    """
     _officer_list = ["SeatedEquation", "mnycz04"]
     for channel in ctx.guild.voice_channels:
         for member in channel.members:
             if member.name in _officer_list and channel.name == "Officer Channel":
                 return True
     return False
+
+
+def setconfig(section_name, value_name, new_value):
+    config.set(section_name, value_name, new_value)
+    with open('config.ini', 'w') as file:
+        config.write(file)
 
 
 # Server issued commands:
@@ -245,21 +259,122 @@ async def sentence(ctx, length):
 async def officer(ctx):
     await ctx.message.delete()
     logger.info(f"{ctx.message.author} used the officer command in guild {ctx.guild.name}, id {ctx.guild.id}.")
-    _whitelisted_members = ["cfallat7", "Breezus", "2fast4you"]
-    if ctx.author.name not in _whitelisted_members:
-        await ctx.send("**You are not whitelisted to use that command!**", delete_after=5.0)
-        logger.info("They were not whitelisted to use that command.")
-        return
-    for channel in ctx.guild.voice_channels:
+    _whitelisted_members = config['OFFICER']['whitelistedpeople'].split(', ')
+    restrictionlevel = config['OFFICER']['restrictionlevel']
+
+    for channel in ctx.guild.voice_channels:  # Find the officer channel's discord object
         if channel.name == "Officer Channel":
             _officer_channel = channel
-    if not await check_for_officer(ctx):
-        await ctx.message.author.move_to(_officer_channel)
-        logger.info(f"{ctx.author.name} was moved to {_officer_channel.name}.")
+
+    if restrictionlevel == 'closed':
+        await ctx.send("**The Officer Channel is currently closed, ask an Operator to move you.**", delete_after=5)
         return
+
+    elif restrictionlevel == 'restricted':
+        if ctx.author.name in _whitelisted_members and await check_for_officer(ctx):
+            await ctx.send("**The Officer Channel is restricted, and an operator is in there, ask them to move you.**",
+                           delete_after=5)
+        elif ctx.author.name in _whitelisted_members:
+            await ctx.send("Moved!", delete_after=2)
+            await ctx.author.move_to(_officer_channel)
+        else:
+            await ctx.send("**The Officer Channel is currently closed, ask an Operator to move you.**", delete_after=5)
+        return
+
+    elif restrictionlevel == 'whitelist':
+        if ctx.author.name in _whitelisted_members:
+            await ctx.author.move_to(_officer_channel)
+            await ctx.send("Moved!", delete_after=2)
+        else:
+            await ctx.send("**The Officer Channel is currently closed, ask an Operator to move you.**", delete_after=5)
+        return
+
+    elif restrictionlevel == 'open':
+        await ctx.send("Moved!", delete_after=3)
+        await ctx.author.move_to(_officer_channel)
+
+
+@client.command()
+async def offres(ctx, restriction_level='closed'):
+    """
+    :param obj ctx:
+    :param str restriction_level:
+    :return:
+    """
+    await ctx.message.delete()
+    admins = ['mnycz04', 'SeatedEquation']
+    if ctx.author.name not in admins:
+        return
+
+    restriction_level = restriction_level.lower()
+
+    if restriction_level == 'closed':
+        setconfig('OFFICER', 'restrictionlevel', 'closed')
+        await ctx.send(":x: The Officer Channel access is now **__Closed__**", delete_after=5)
+    elif restriction_level == 'res':
+        setconfig('OFFICER', 'restrictionlevel', 'restricted')
+        await ctx.send(":exclamation: The Officer Channel access is now **__Restricted__**", delete_after=5)
+    elif restriction_level == 'wl':
+        setconfig('OFFICER', 'restrictionlevel', 'whitelist')
+        await ctx.send(":warning: The Officer Channel access is now **__Whitelist Only__**", delete_after=5)
+    elif restriction_level == 'open':
+        setconfig('OFFICER', 'restrictionlevel', 'open')
+        await ctx.send(":white_check_mark: The Officer Channel access is now **__Open__**", delete_after=5)
     else:
-        await ctx.send("**Hey idiot, there is an officer in that channel, ask them, not me.**", delete_after=5.0)
+        setconfig('OFFICER', 'restrictionlevel', 'closed')
+        await ctx.send(":x: The Officer Channel access is now **__Closed__**", delete_after=5)
+
+
+@client.command()
+async def addwl(ctx, member_name):
+    """
+    :param ctx:
+    :param str member_name:
+    :return:
+    """
+    await ctx.message.delete()
+    if ctx.author.name != 'mnycz04':
+        await ctx.send("**You can't use that!**")
+
+    current_wl = config['OFFICER']['whitelistedpeople'].split(', ')
+    for member in ctx.guild.members:
+        if str(member_name) == f'<@!{member.id}>':
+            current_wl.append(member.name)
+            break
+    else:
+        await ctx.send('**Error in adding member, make sure you @ them.**', delete_after=5)
         return
+    current_wl = list(set(current_wl))
+    setconfig('OFFICER', 'whitelistedpeople', ', '.join(current_wl))
+
+
+@client.command()
+async def remwl(ctx, member_name):
+    """
+    :param ctx:
+    :param str member_name:
+    :return:
+    """
+    await ctx.message.delete()
+    if ctx.author.name != 'mnycz04':
+        await ctx.send("**You can't use that!**")
+
+    current_wl = config['OFFICER']['whitelistedpeople'].split(', ')
+
+    for member in ctx.guild.members:
+        if str(member_name) == f'<@!{member.id}>':
+            guild_members_name = member.name
+            break
+    else:
+        await ctx.send('**Error in adding member, make sure you @ them.**', delete_after=5)
+        return
+
+    for name in current_wl:
+        if name == guild_members_name:
+            current_wl.remove(name)
+
+    current_wl = list(set(current_wl))
+    setconfig('OFFICER', 'whitelistedpeople', ', '.join(current_wl))
 
 
 # Runs the bot with private token from token.TOKEN
