@@ -17,7 +17,6 @@ from reddit import get_reddit_post
 from schedule import check_time
 from serverPing import ping as tcp_ping
 
-__version__ = '1.0'
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -46,6 +45,10 @@ logger.addHandler(consoleHandler)
 logger.setLevel(20)
 
 
+# Gets a string from the config, that is used to create a set of admins
+ADMINS: set = set(config['ADMIN']['admins'].split(', '))
+
+
 @client.event
 async def on_ready():
     """
@@ -58,6 +61,7 @@ async def on_ready():
     return
 
 
+# A bunch of functions that are useful for several commands:
 async def _purge(ctx, limit):
     await ctx.message.delete()
     await ctx.channel.purge(limit=limit + 1, bulk=True)
@@ -68,70 +72,29 @@ async def check_for_officer(ctx):
     Checks for an officer in Officer Channel
     :return: If there is an officer, returns True, else returns False
     """
-    _officer_list = ["SeatedEquation", "mnycz04"]
     for channel in ctx.guild.voice_channels:
         for member in channel.members:
-            if member.name in _officer_list and channel.name == "Officer Channel":
+            if member.name in ADMINS and channel.name == "Officer Channel":
                 return True
     return False
 
 
 def setconfig(section_name, value_name, new_value):
+    """
+    :param section_name: The section of the ini file
+    :param value_name: The value which will be changed
+    :param new_value: The new value
+    """
     config.set(section_name, value_name, new_value)
     with open('config.ini', 'w') as file:
         config.write(file)
 
 
 # Server issued commands:
-
-@client.command()
-async def h(ctx, command='none'):
-    await ctx.message.delete()
-    command = command.lower()
-    if command == "reddit":
-        embed = discord.Embed(title="Command: Reddit")
-        embed.description = """Allow user to retrieve a random new post from a subreddit
-                            
-                            "$reddit [subreddit]"
-                            aliases: r, red"""
-    elif command == 'purge':
-        embed = discord.Embed(title='Command: Purge')
-        embed.description = """Bulk deletes a specified number of messages in a text channel
-                            
-                            "$purge [number to delete]"
-                            aliases: delete
-                            Requires the manage messages role"""
-    elif command == 'ping':
-        embed = discord.Embed(title='Command: Ping')
-        embed.description = """Pings a specified IP via TCP on a given port.
-        
-                            "$ping [IP] [port]"
-                            """
-    elif command == 'schedule':
-        embed = discord.Embed(title='Command: Schedule')
-        embed.description = """Returns a school schedule and tells you what period your in
-                            
-                            "$schedule"
-                            aliases: shed"""
-    else:
-        embed = discord.Embed(title='Help')
-        embed.description = """List of Commands:
-                            
-                            reddit
-                            purge
-                            ping
-                            schedule
-                            
-                            Use "$help [command name] for more detailed descriptions"
-                            """
-
-    await ctx.send(embed=embed)
-
-
 @client.command(aliases=['red', 'r'])
 async def reddit(ctx, *, subreddit=None):
     await ctx.message.delete()
-    subreddit = ''.join(subreddit).lower().replace(' ', '')
+    subreddit: str = ''.join(subreddit).lower().replace(' ', '')
     logger.info(f"""{ctx.author.name} in guild {ctx.guild.name}, \
 id {ctx.guild.id} requested a random post from r/{subreddit}.""")
     try:
@@ -170,7 +133,7 @@ id {ctx.guild.id} requested a random post from r/{subreddit}.""")
 
 @client.command(aliases=['delete'])
 async def purge(ctx, limit="""10"""):
-    if ctx.message.author.name != 'mnycz04':
+    if ctx.message.author.name not in ADMINS:
         return
     logger.info(f"{ctx.author.name} has requested a purge of {ctx.channel.name} in guild {ctx.guild.name}, \
 id {ctx.guild.id}, for {limit} messages.")
@@ -197,8 +160,8 @@ id {ctx.guild.id}, for {limit} messages.")
 async def schedule(ctx):
     """Sends a picture of the school schedule"""
     await ctx.message.delete()
-    logger.info(f"{ctx.author.name} has requested the school schedule in guild {ctx.guild.name},\
- id {ctx.guild.id}.")
+    logger.info(f"{ctx.author.name} has requested the school schedule in guild {ctx.guild.name}, " +
+                f"id {ctx.guild.id}.")
 
     embed = discord.Embed(title=f'{check_time().current_period}')
     embed.set_image(url="https://i.imgur.com/IdLNJW0.png")
@@ -234,6 +197,9 @@ async def roll(ctx, *, message=None):
 
 @client.command()
 async def sentence(ctx, length):
+    """
+    Returns a sentence of randomly generated words of <length> words long.
+    """
     await ctx.message.delete()
     try:
         length = int(length)
@@ -264,7 +230,7 @@ async def officer(ctx):
 
     for channel in ctx.guild.voice_channels:  # Find the officer channel's discord object
         if channel.name == "Officer Channel":
-            _officer_channel = channel
+            _officer_channel: object = channel
 
     if restrictionlevel == 'closed':
         await ctx.send("**The Officer Channel is currently closed, ask an Operator to move you.**", delete_after=5)
@@ -299,11 +265,9 @@ async def offres(ctx, restriction_level='closed'):
     """
     :param obj ctx:
     :param str restriction_level:
-    :return:
     """
     await ctx.message.delete()
-    admins = ['mnycz04', 'SeatedEquation']
-    if ctx.author.name not in admins:
+    if ctx.author.name not in ADMINS:
         return
 
     restriction_level = restriction_level.lower()
@@ -329,14 +293,13 @@ async def offres(ctx, restriction_level='closed'):
 async def addwl(ctx, member_name):
     """
     :param ctx:
-    :param str member_name:
-    :return:
+    :param str member_name: the member's id, in the form of a ping.
     """
     await ctx.message.delete()
     if ctx.author.name != 'mnycz04':
         await ctx.send("**You can't use that!**")
 
-    current_wl = config['OFFICER']['whitelistedpeople'].split(', ')
+    current_wl: list = config['OFFICER']['whitelistedpeople'].split(', ')
     for member in ctx.guild.members:
         if str(member_name) == f'<@!{member.id}>':
             current_wl.append(member.name)
@@ -352,14 +315,13 @@ async def addwl(ctx, member_name):
 async def remwl(ctx, member_name):
     """
     :param ctx:
-    :param str member_name:
-    :return:
+    :param str member_name: the member's id, in the form of a ping.
     """
     await ctx.message.delete()
     if ctx.author.name != 'mnycz04':
         await ctx.send("**You can't use that!**")
 
-    current_wl = config['OFFICER']['whitelistedpeople'].split(', ')
+    current_wl: list = config['OFFICER']['whitelistedpeople'].split(', ')
 
     for member in ctx.guild.members:
         if str(member_name) == f'<@!{member.id}>':
@@ -373,7 +335,7 @@ async def remwl(ctx, member_name):
         if name == guild_members_name:
             current_wl.remove(name)
 
-    current_wl = list(set(current_wl))
+    current_wl: list = list(set(current_wl))
     setconfig('OFFICER', 'whitelistedpeople', ', '.join(current_wl))
 
 
