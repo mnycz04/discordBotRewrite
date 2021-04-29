@@ -74,7 +74,7 @@ async def check_for_officer(ctx):
     """
     for channel in ctx.guild.voice_channels:
         for member in channel.members:
-            if member.name in ADMINS and channel.name == "Officer Channel":
+            if member.name in ADMINS and channel.name == "Director's Channel":
                 return True
     return False
 
@@ -228,23 +228,23 @@ async def officer(ctx):
     _whitelisted_members = config['OFFICER']['whitelistedpeople'].split(', ')
     restrictionlevel = config['OFFICER']['restrictionlevel']
 
-    for channel in ctx.guild.voice_channels:  # Find the officer channel's discord object
-        if channel.name == "Officer Channel":
-            _officer_channel: object = channel
+    _officer_channel = discord.utils.get(ctx.guild.voice_channels, name="Director's Channel")
 
     if restrictionlevel == 'closed':
-        await ctx.send("**The Officer Channel is currently closed, ask an Operator to move you.**", delete_after=5)
+        await ctx.send("**The Director's Channel is currently closed, ask a Director to move you.**", delete_after=5)
         return
 
     elif restrictionlevel == 'restricted':
         if ctx.author.name in _whitelisted_members and await check_for_officer(ctx):
-            await ctx.send("**The Officer Channel is restricted, and an operator is in there, ask them to move you.**",
+            await ctx.send("**The Director's Channel is restricted, and a Director is in there," +
+                           " ask them to move you.**",
                            delete_after=5)
         elif ctx.author.name in _whitelisted_members:
             await ctx.send("Moved!", delete_after=2)
             await ctx.author.move_to(_officer_channel)
         else:
-            await ctx.send("**The Officer Channel is currently closed, ask an Operator to move you.**", delete_after=5)
+            await ctx.send("**The Director's Channel is currently closed, ask a Director to move you.**",
+                           delete_after=5)
         return
 
     elif restrictionlevel == 'whitelist':
@@ -252,7 +252,8 @@ async def officer(ctx):
             await ctx.author.move_to(_officer_channel)
             await ctx.send("Moved!", delete_after=2)
         else:
-            await ctx.send("**The Officer Channel is currently closed, ask an Operator to move you.**", delete_after=5)
+            await ctx.send("**The Director's Channel is currently closed, ask a Director to move you.**",
+                           delete_after=5)
         return
 
     elif restrictionlevel == 'open':
@@ -274,19 +275,19 @@ async def offres(ctx, restriction_level='closed'):
 
     if restriction_level == 'closed':
         setconfig('OFFICER', 'restrictionlevel', 'closed')
-        await ctx.send(":x: The Officer Channel access is now **__Closed__**", delete_after=5)
+        await ctx.send(":x: The Director's Channel access is now **__Closed__**", delete_after=5)
     elif restriction_level == 'res':
         setconfig('OFFICER', 'restrictionlevel', 'restricted')
-        await ctx.send(":exclamation: The Officer Channel access is now **__Restricted__**", delete_after=5)
+        await ctx.send(":exclamation: The Director's Channel access is now **__Restricted__**", delete_after=5)
     elif restriction_level == 'wl':
         setconfig('OFFICER', 'restrictionlevel', 'whitelist')
-        await ctx.send(":warning: The Officer Channel access is now **__Whitelist Only__**", delete_after=5)
+        await ctx.send(":warning: The Director's Channel access is now **__Whitelist Only__**", delete_after=5)
     elif restriction_level == 'open':
         setconfig('OFFICER', 'restrictionlevel', 'open')
-        await ctx.send(":white_check_mark: The Officer Channel access is now **__Open__**", delete_after=5)
+        await ctx.send(":white_check_mark: The Director's Channel access is now **__Open__**", delete_after=5)
     else:
         setconfig('OFFICER', 'restrictionlevel', 'closed')
-        await ctx.send(":x: The Officer Channel access is now **__Closed__**", delete_after=5)
+        await ctx.send(":x: The Director's Channel access is now **__Closed__**", delete_after=5)
 
 
 @client.command()
